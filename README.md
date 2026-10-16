@@ -21,7 +21,7 @@ Fehlt eine Metrik, steht dort „nicht verfügbar“ statt eines erfundenen Wert
 - Detections aus dem Sigma Detection Lab (importiert), lokale Splunk-Suchen und simulierte Regeln, jeweils mit
   Logik, Feldern, MITRE-Zuordnung, erzeugtem SPL und Teststatus.
 - Hosts aus den Auth-Logs, Cribl-Inputs, -Routen und -Outputs mit Zählern, ein druckbarer Report und eine
-  Settings-Seite ohne Secrets.
+  Settings-Seite, die nur URLs und Schalter anzeigt.
 
 Der Sicherheitsindex ist eine einfache Heuristik: 100 minus 25 je kritischem, 10 je hohem, 4 je mittlerem und
 1 je niedrigem offenen Incident, minus 15 je ausgefallener Kernintegration (Splunk, Cribl). Die Formel steht
@@ -67,7 +67,7 @@ Ohne Splunk und Cribl startet das Portal trotzdem, die Panels zeigen dann „Nic
 `SEED_DEMO=true` gibt es vier Demo-Incidents. Für echte Daten vom Arbeitsplatz aus reicht ein SSH-Tunnel:
 
 ```bash
-ssh -N -L 18089:<splunk-container-ip>:8089 -L 29000:<cribl-container-ip>:9000 root@<siem-docker>
+ssh -N -L 18089:<SPLUNK-CONTAINER-IP>:8089 -L 29000:<CRIBL-CONTAINER-IP>:9000 root@<VM-IP>
 ```
 
 Dazu `SPLUNK_URL=https://127.0.0.1:18089`, `CRIBL_URL=http://127.0.0.1:29000` und
@@ -104,7 +104,7 @@ Wer ohne Ansible deployen will, kopiert das Repo auf die VM, legt dort eine `.en
 startet `docker compose up -d --build`.
 
 Docker-Container auf der VM brauchen einen erreichbaren DNS-Server für `npm ci`. Weil der per DHCP verteilte
-IPv4-DNS im Heimnetz nicht antwortet, steht in `/etc/docker/daemon.json` fest `{ "dns": ["192.168.178.1"] }`.
+IPv4-DNS im Heimnetz nicht antwortet, steht in `/etc/docker/daemon.json` fest `{ "dns": ["<ROUTER-IP>"] }`.
 
 Das Admin-Passwort wurde beim ersten Deployment zufällig erzeugt und liegt nur auf der VM in
 `/root/soc-portal-admin-password.txt`. In der `.env` steht nur der scrypt-Hash.
@@ -137,7 +137,8 @@ Schreibende Endpunkte brauchen ein signiertes Session-Cookie (`HttpOnly`, `SameS
 Login prüft einen scrypt-Hash in konstanter Zeit, nach fünf Fehlversuchen ist die IP fünf Minuten gesperrt.
 Lesen geht im LAN ohne Login. Der Port ist nur an die LAN-IP gebunden und am Router nicht freigegeben.
 
-Secrets stehen weder im Frontend noch in Git. Integrationsziele kommen nur aus der Konfiguration und müssen auf
+Zugangsdaten verwaltet die `.env` auf dem Server, die beim Deployment aus HashiCorp Vault kommt; das
+Frontend bekommt davon nichts zu sehen. Integrationsziele kommen nur aus der Konfiguration und müssen auf
 der Allowlist stehen. Filterwerte werden mit Zod geprüft und in SPL gequotet, Tests decken Injection-Versuche ab.
 
 ## Grenzen

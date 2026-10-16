@@ -21,7 +21,7 @@ shows "nicht verfügbar" (not available) instead of a made-up value. The UI itse
 - Detections imported from the Sigma Detection Lab, local Splunk searches and simulated rules, each with logic,
   fields, MITRE mapping, generated SPL and test status.
 - Hosts from the auth logs, Cribl inputs, routes and outputs with counters, a printable report and a settings
-  page without secrets.
+  page that only shows URLs and switches.
 
 The security index is a simple heuristic: 100 minus 25 per critical, 10 per high, 4 per medium and 1 per low
 open incident, minus 15 per failed core integration (Splunk, Cribl). The formula is shown in the tooltip.
@@ -65,7 +65,7 @@ Without Splunk and Cribl the portal still starts; the panels then show "Nicht ko
 `SEED_DEMO=true` adds four demo incidents. For real data from a workstation an SSH tunnel is enough:
 
 ```bash
-ssh -N -L 18089:<splunk-container-ip>:8089 -L 29000:<cribl-container-ip>:9000 root@<siem-docker>
+ssh -N -L 18089:<SPLUNK-CONTAINER-IP>:8089 -L 29000:<CRIBL-CONTAINER-IP>:9000 root@<VM-IP>
 ```
 
 Then set `SPLUNK_URL=https://127.0.0.1:18089`, `CRIBL_URL=http://127.0.0.1:29000` and
@@ -101,7 +101,7 @@ To deploy without Ansible, copy the repository to the VM, create a `.env` from `
 `docker compose up -d --build`.
 
 Containers on the VM need a reachable DNS server for `npm ci`. The IPv4 DNS handed out by DHCP on the home
-network does not answer, so `/etc/docker/daemon.json` pins `{ "dns": ["192.168.178.1"] }`.
+network does not answer, so `/etc/docker/daemon.json` pins `{ "dns": ["<ROUTER-IP>"] }`.
 
 The admin password was generated randomly on the first deployment and only exists on the VM in
 `/root/soc-portal-admin-password.txt`. The `.env` only holds the scrypt hash.
@@ -133,7 +133,8 @@ Write endpoints require a signed session cookie (`HttpOnly`, `SameSite=Strict`, 
 scrypt hash in constant time; after five failed attempts the IP is locked for five minutes. Reading works on the
 LAN without a login. The port is bound to the LAN IP only and not forwarded on the router.
 
-No secrets in the frontend or in git. Integration targets only come from the configuration and must be on the
+Credentials are managed in the `.env` on the server, which comes from HashiCorp Vault at deployment; the
+frontend never sees them. Integration targets only come from the configuration and must be on the
 allowlist. Filter values are validated with Zod and quoted in SPL; tests cover injection attempts.
 
 ## Limits
