@@ -1,0 +1,18 @@
+{
+  "name": "homelab-soc-portal",
+  "private": true,
+  "type": "module",
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "dev": "npm run dev -w server & npm run dev -w web",
+    "build": "npm run build -w web && npm run build -w server",
+    "test": "npm test -w server && npm test -w web",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
+    "e2e": "playwright test",
+    "import:sigma": "npm run import:sigma -w server --",
+    "hash-password": "npm run hash-password -w server --"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  }
+}

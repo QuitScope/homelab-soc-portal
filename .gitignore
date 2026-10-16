@@ -1,0 +1,9 @@
+.env
+node_modules/
+dist/
+*.sqlite
+*.sqlite-*
+server/data/*.sqlite*
+test-results/
+playwright-report/
+*.tsbuildinfo

@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+.env
+*.sqlite*
+**/data/*.sqlite*
+.git
+e2e
+test-results
+playwright-report

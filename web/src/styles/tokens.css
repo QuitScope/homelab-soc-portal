@@ -1,0 +1,142 @@
+/*
+ * Design tokens – single source for colors, status, spacing, radii, typography, focus and breakpoints.
+ * Derived from the reference image (docs/design-reference.md): near-black panels on a dark petrol gradient,
+ * cyan as primary, petrol as secondary accent, compact density.
+ */
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* surfaces */
+  --color-bg: #03090b;
+  --color-bg-glow: #0b3a3e;
+  --color-panel: #070e10;
+  --color-panel-2: #0b1517;
+  --color-panel-3: #101e21;
+  --color-border: #15272a;
+  --color-border-strong: #21393d;
+
+  /* text */
+  --color-fg: #e4f0f1;
+  --color-fg-muted: #8aa1a4;
+  --color-fg-subtle: #5b7275;
+
+  /* brand */
+  --color-primary: #2ee6e6;
+  --color-primary-fg: #021012;
+  --color-petrol: #14808a;
+  --color-petrol-dim: #0c3f44;
+
+  /* severity */
+  --color-sev-critical: #f2555a;
+  --color-sev-high: #ff8a4c;
+  --color-sev-medium: #f2b544;
+  --color-sev-low: #4fd1c5;
+
+  /* incident status */
+  --color-st-new: #2ee6e6;
+  --color-st-investigating: #f2b544;
+  --color-st-resolved: #3ddc97;
+  --color-st-closed: #6b8285;
+
+  /* integration / node state */
+  --color-ok: #3ddc97;
+  --color-warn: #f2b544;
+  --color-down: #f2555a;
+  --color-off: #4b5f62;
+  --color-sim: #a78bfa;
+
+  /* typography */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  /* radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  /* spacing scale: compact panels */
+  --spacing: 0.25rem;
+
+  /* breakpoints */
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1100px;
+  --breakpoint-xl: 1360px;
+  --breakpoint-2xl: 1680px;
+}
+
+:root {
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-primary);
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 700px at 85% -10%, color-mix(in srgb, var(--color-bg-glow) 70%, transparent), transparent 70%),
+    radial-gradient(900px 600px at -10% 110%, color-mix(in srgb, var(--color-petrol-dim) 60%, transparent), transparent 70%),
+    var(--color-bg);
+  background-attachment: fixed;
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+/* panels: near-black with faint top highlight like the reference */
+@utility panel {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-panel-2) 90%, transparent), var(--color-panel));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 3%, transparent);
+}
+
+@utility glow {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 45%, transparent), 0 0 18px color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+/* React Flow dark overrides */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: var(--color-petrol);
+  --xy-controls-button-background-color: var(--color-panel-2);
+  --xy-controls-button-background-color-hover: var(--color-panel-3);
+  --xy-controls-button-color: var(--color-fg-muted);
+  --xy-controls-button-border-color: var(--color-border);
+  --xy-attribution-background-color: transparent;
+}
+.react-flow__attribution {
+  display: none;
+}
+
+@media print {
+  body { background: white; color: black; }
+  .no-print { display: none !important; }
+}

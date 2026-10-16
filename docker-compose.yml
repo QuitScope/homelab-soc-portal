@@ -1,0 +1,32 @@
+# Homelab SOC Portal – runs next to the homelab-siem stack and joins its Docker network,
+# so Splunk REST (splunk:8089) and the Cribl API (cribl:9000) stay internal.
+services:
+  portal:
+    build: .
+    image: homelab-soc-portal:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_PATH: /data/portal.sqlite
+    volumes:
+      - portal-data:/data
+    ports:
+      # LAN only: bind to the VM's LAN address (PORTAL_BIND) – never forward this port on the router
+      - "${PORTAL_BIND:-0.0.0.0}:${PORTAL_PORT:-8090}:8080"
+    networks:
+      - siem
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  portal-data:
+
+networks:
+  siem:
+    name: ${SIEM_NETWORK:-homelab-siem_default}
+    external: true

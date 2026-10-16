@@ -1,0 +1,189 @@
+{
+  "importedAt": "2026-10-15T19:33:39.658Z",
+  "source": "QuitScope/homelab-siem/sigma-detection-lab",
+  "detections": [
+    {
+      "id": "privileged_command",
+      "sigmaId": "652b9997-f46f-44f2-8432-3ca55555b1d2",
+      "title": "Sudo Command On Credential Or Sudoers Files",
+      "origin": "imported",
+      "level": "high",
+      "ruleStatus": "test",
+      "description": "A user ran a command via sudo whose command line references /etc/shadow, /etc/gshadow or the sudoers\nconfiguration (/etc/sudoers, /etc/sudoers.d/, visudo). Reading shadow files exposes password hashes;\nchanging sudoers grants persistent root rights.\nSource data: sudo's own syslog line (\"<user> : ... USER=<target> ; COMMAND=<cmd>\"), normalized by the\nCribl pipeline. Required fields: event_type, action, user, target_user, command.\nsudo logs the command it authorized, not what the process did afterwards. Commands run inside a root\nshell (sudo -s / sudo -i) are NOT visible here; that needs sudo I/O logging or auditd execve events.",
+      "mitre": [
+        "T1003.008",
+        "T1548.003"
+      ],
+      "tactics": [
+        "credential-access",
+        "privilege-escalation"
+      ],
+      "logsource": {
+        "product": "linux",
+        "service": "sudo"
+      },
+      "logic": "detection:\n  selection:\n    event_type: sudo\n    action: success\n  sensitive_target:\n    command|contains:\n      - /etc/shadow\n      - /etc/gshadow\n      - /etc/sudoers\n      - visudo\n  condition: selection and sensitive_target",
+      "fields": [
+        "event_time",
+        "user",
+        "target_user",
+        "command",
+        "dest"
+      ],
+      "falsePositives": [
+        "Administrators intentionally editing sudoers with visudo",
+        "Configuration management (Ansible, Puppet) templating sudoers files"
+      ],
+      "references": [
+        "https://attack.mitre.org/techniques/T1003/008/",
+        "https://attack.mitre.org/techniques/T1548/003/"
+      ],
+      "eventTypes": [
+        "sudo"
+      ],
+      "spl": "index=\"homelab_auth\" sourcetype=\"homelab:auth\" event_type=\"sudo\" action=\"success\" command IN (\"*/etc/shadow*\", \"*/etc/gshadow*\", \"*/etc/sudoers*\", \"*visudo*\") | table event_time,user,target_user,command,dest",
+      "savedSearch": "Sigma - Sudo Command On Credential Or Sudoers Files",
+      "scheduled": true,
+      "tests": {
+        "unit": "pytest: 21 passed (gesamte Suite)",
+        "liveFixture": "PASS",
+        "liveRealEvent": true,
+        "alertFired": true,
+        "source": "sigma-detection-lab/docs/test-results.md"
+      },
+      "sourceFile": "sigma-detection-lab/rules/linux/privileged_command.yml"
+    },
+    {
+      "id": "ssh_auth_failure",
+      "sigmaId": "0fa37bd4-0eca-4626-833f-d18a6e181d33",
+      "title": "SSH Authentication Failure",
+      "origin": "imported",
+      "level": "low",
+      "ruleStatus": "test",
+      "description": "A single failed SSH authentication (wrong password, unknown user, rejected key) on a Linux host.\nBuilding block for the password-guessing correlation below; on its own it is low severity because\nmistyped passwords are common.\nSource data: sshd syslog lines (\"Failed password ...\", \"Invalid user ...\") normalized by the Cribl\npipeline homelab_auth_normalize (docs/data-schema.md). Required fields: event_type, service, action, src, user.",
+      "mitre": [
+        "T1110.001"
+      ],
+      "tactics": [
+        "credential-access"
+      ],
+      "logsource": {
+        "product": "linux",
+        "service": "sshd"
+      },
+      "logic": "detection:\n  selection:\n    event_type: authentication\n    service: ssh\n    action: failure\n  condition: selection",
+      "fields": [
+        "event_time",
+        "user",
+        "src",
+        "dest"
+      ],
+      "falsePositives": [
+        "Users mistyping their password",
+        "Monitoring or automation with outdated credentials"
+      ],
+      "references": [
+        "https://attack.mitre.org/techniques/T1110/001/"
+      ],
+      "eventTypes": [
+        "authentication"
+      ],
+      "spl": "index=\"homelab_auth\" sourcetype=\"homelab:auth\" event_type=\"authentication\" service=\"ssh\" action=\"failure\"",
+      "savedSearch": "Sigma - SSH Authentication Failure",
+      "scheduled": false,
+      "tests": {
+        "unit": "pytest: 21 passed (gesamte Suite)",
+        "liveFixture": "PASS",
+        "liveRealEvent": null,
+        "alertFired": null,
+        "source": "sigma-detection-lab/docs/test-results.md"
+      },
+      "sourceFile": "sigma-detection-lab/rules/linux/ssh_auth_failure.yml"
+    },
+    {
+      "id": "ssh_password_guessing",
+      "sigmaId": "e967f401-4764-4e38-8993-5dcb7730ce59",
+      "title": "SSH Password Guessing From Single Source",
+      "origin": "imported",
+      "level": "medium",
+      "ruleStatus": "test",
+      "description": "Three or more failed SSH authentications from the same source address within 5 minutes.\nMirrors the existing Splunk alert \"HomeLab - Repeated Failed Logins\".",
+      "mitre": [
+        "T1110.001"
+      ],
+      "tactics": [
+        "credential-access"
+      ],
+      "logsource": null,
+      "logic": "correlation:\n  type: event_count\n  rules:\n    - ssh_auth_failure\n  group-by:\n    - src\n  timespan: 5m\n  generate: true\n  condition:\n    gte: 3",
+      "fields": [],
+      "falsePositives": [
+        "A user retrying a forgotten password several times",
+        "Vulnerability scanners in the lab network"
+      ],
+      "references": [
+        "https://attack.mitre.org/techniques/T1110/001/"
+      ],
+      "eventTypes": [
+        "authentication"
+      ],
+      "spl": "index=\"homelab_auth\" sourcetype=\"homelab:auth\" event_type=\"authentication\" service=\"ssh\" action=\"failure\"\n\n| bin _time span=5m\n| stats count as event_count by _time src\n\n| search event_count >= 3",
+      "savedSearch": "Sigma - SSH Password Guessing From Single Source",
+      "scheduled": true,
+      "tests": {
+        "unit": "pytest: 21 passed (gesamte Suite)",
+        "liveFixture": "PASS",
+        "liveRealEvent": null,
+        "alertFired": true,
+        "source": "sigma-detection-lab/docs/test-results.md"
+      },
+      "sourceFile": "sigma-detection-lab/rules/linux/ssh_auth_failure.yml"
+    },
+    {
+      "id": "user_account_created",
+      "sigmaId": "748c936b-218c-4115-a669-1107560a75b2",
+      "title": "Local User Account Created",
+      "origin": "imported",
+      "level": "medium",
+      "ruleStatus": "test",
+      "description": "A new local user account was created on a Linux host.\nSource data: the shadow-utils syslog line \"useradd[pid]: new user: name=<name>, UID=...\" (also written when\nDebian/Ubuntu adduser calls useradd), normalized by the Cribl pipeline to event_type=user_created.\nRequired fields: event_type, target_user, dest. The \"new group\" line written in the same call is not a match.\nAccounts added by editing /etc/passwd directly or by tools that bypass useradd are NOT detected; that needs\nauditd file watches on /etc/passwd.",
+      "mitre": [
+        "T1136.001"
+      ],
+      "tactics": [
+        "persistence"
+      ],
+      "logsource": {
+        "product": "linux",
+        "service": "auth"
+      },
+      "logic": "detection:\n  selection:\n    event_type: user_created\n  condition: selection",
+      "fields": [
+        "event_time",
+        "target_user",
+        "dest"
+      ],
+      "falsePositives": [
+        "Planned onboarding of new users",
+        "Package installation creating system/service accounts"
+      ],
+      "references": [
+        "https://attack.mitre.org/techniques/T1136/001/"
+      ],
+      "eventTypes": [
+        "user_created"
+      ],
+      "spl": "index=\"homelab_auth\" sourcetype=\"homelab:auth\" event_type=\"user_created\" | table event_time,target_user,dest",
+      "savedSearch": "Sigma - Local User Account Created",
+      "scheduled": true,
+      "tests": {
+        "unit": "pytest: 21 passed (gesamte Suite)",
+        "liveFixture": "PASS",
+        "liveRealEvent": true,
+        "alertFired": true,
+        "source": "sigma-detection-lab/docs/test-results.md"
+      },
+      "sourceFile": "sigma-detection-lab/rules/linux/user_account_created.yml"
+    }
+  ]
+}
